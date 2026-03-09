@@ -2,6 +2,9 @@
 title: "R_study_Ch03"
 format: gfm
 editor: visual
+execute:
+  error: true
+  message: false
 ---
 
 # Ch03. R 프로그래밍 익히기
@@ -126,7 +129,7 @@ cat(x, y)
 패키지 설치: install.packages()
 
 ```{r}
-#| output: false
+#| eval: false
 # reshape2 패키지 설치하기
 install.packages("reshape2")
 ```
@@ -148,6 +151,7 @@ library(reshape2)
 패키지 삭제: remove.packages("패키지")
 
 ```{r}
+#| eval: false
 remove.packages("reshape2")
 ```
 
