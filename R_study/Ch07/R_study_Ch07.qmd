@@ -1,0 +1,172 @@
+---
+title: "R_study_Ch07"
+format: gfm
+editor: visual
+execute:
+  error: true
+  message: false
+---
+
+# Ch07. 프로젝트로 실력 다지기
+
+## 07-1 지역별 국내 휴양림 분포 비교하기
+
+```{r}
+# 엑셀 파일 가져오기
+library(readxl)
+
+forest_example_data <- read_excel("../data/forest_example_data.xls")
+colnames(forest_example_data) <- c("name", "city", "gubun", "area", "number",
+                                   "stay", "city_new", "code", "codename")
+str(forest_example_data)
+head(forest_example_data)
+```
+
+```{r}
+# freq() 함수로 시도별 휴양림 빈도분석하기
+library(descr)
+freq(forest_example_data$city, plot = T, main = "city")
+```
+
+```{r}
+# table() 함수로 시도별 휴양림 빈도분석하기
+city_table <- table(forest_example_data$city)
+city_table
+barplot(city_table)
+```
+
+```{r}
+# count() 함수로 시도별 휴양림 빈도분석하고 내림차순 정렬하기
+library(dplyr)
+count(forest_example_data, city) %>% arrange(desc(n))
+```
+
+```{r}
+# 소재지_시도명 컬럼으로 시도별 분포 확인하기
+count(forest_example_data, city_new) %>% arrange(desc(n))
+```
+
+```{r}
+# 제공기관명 칼럼으로 시도별 분포 확인하기
+count(forest_example_data, codename) %>% arrange(desc(n))
+```
+
+## 07-2 해외 입국자 추이 확인하기
+
+```{r}
+# 엑셀 파일 가져오기
+library(readxl)
+entrance_xls <- read_excel("../data/entrance_exam.xls")
+
+str(entrance_xls)
+head(entrance_xls)
+```
+
+```{r}
+# 컬럼명 변경과 띄어쓰기 제거하기
+colnames(entrance_xls) <- c("country", "JAN", "FEB", "MAR", "APR", "MAY",
+                            "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC")
+entrance_xls$country <- gsub(" ", "", entrance_xls$country)
+entrance_xls
+```
+
+문자열 대체 : gsub("찾을 문자열", "대체할 문자열", 데이터)
+
+```{r}
+# 1월 기준 상위 5개국 추출하기
+entrance_xls |> nrow()
+
+top5_country <- entrance_xls[order(-entrance_xls$JAN),] |> head(n = 5)
+top5_country
+```
+
+order() : 오름차순 정렬, 변수 앞의 - 기호로 내림차순 정렬
+
+\|\> : 패키지 없이 사용 가능한 네이티브 파이프 연산자
+
+```{r}
+# 데이터 구조 재구조화하기
+library(reshape2)
+top5_melt <- melt(top5_country, id.vars = "country", variable.name = 'mon')
+head(top5_melt)
+```
+
+```{r}
+# 선 그래프 그리기
+library(ggplot2)
+
+ggplot(top5_melt, aes(x = mon, y = value, group = country)) +
+  geom_line(aes(color = country))
+```
+
+```{r}
+# 그래프 제목 지정하고 y축 범위 조정하기
+ggplot(top5_melt, aes(x = mon, y = value, group = country)) +
+  geom_line(aes(color = country)) +
+  ggtitle("2020년 국적별 입국 수 변화 추이") +
+  scale_y_continuous(breaks = seq(0, 500000, 50000))
+```
+
+y축 범위 조정: scale_y_continuous() 함수 사용, seq()를 함께 사용해 일정한 간격 조정 가능
+
+```{r}
+# 막대 그래프 그리기
+ggplot(top5_melt, aes(x = mon, y = value, fill = country)) +
+  geom_bar(stat = "identity", position = "dodge")
+```
+
+```{r}
+# 누적 막대 그래프 그리기
+ggplot(top5_melt, aes(x = mon, y = value, fill = country)) +
+  geom_bar(stat = "identity", position = "stack")
+```
+
+## 07-3 지도에서 코로나19 선별진료소 위치 확인하기
+
+```{r}
+# 엑셀 파일 가져오기
+library(readxl)
+
+xlsdata <- read_excel("../data/선별진료소_20211125194459.xls")
+View(xlsdata)
+```
+
+```{r}
+# 데이터 컬럼 추출 및 열 이름 변경하기
+data_raw <- xlsdata[, c(2:5)]
+head(data_raw)
+
+names(data_raw)
+names(data_raw) <- c("state", "city", "name", "addr")
+names(data_raw)
+```
+
+```{r}
+# state 컬럼 빈도 확인하기
+table(data_raw$state)
+barplot(table(data_raw$state))
+```
+
+```{r}
+# 대전시 선별진료소 데이터 추출하기
+daejeon_data <- data_raw[data_raw$state == "대전", ]
+head(daejeon_data)
+
+nrow(daejeon_data)
+```
+
+```{r}
+# 데이터 세트에서 선별진료소 위도와 경도 데이터 가져오기
+library(ggmap)
+
+my_key <- Sys.getenv("GOOGLE_MAPS_KEY")
+register_google(my_key)
+
+daejeon_data <- mutate_geocode(data = daejeon_data, location = addr, 
+                               source = "google")
+
+head(daejeon_data)
+head(daejeon_data$lon)
+```
+
+mutate_geocode() : 데이터 프레임의 컬럼명으로 주소가 있는 열을 기준으로 여러 주소의 경도와 위도 데이터를 한 번에 가져옴
