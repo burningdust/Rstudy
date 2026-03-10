@@ -241,3 +241,119 @@ library(descr)
 freq_test <- freq(iris$Sepal.Length, plot = F)
 freq_test
 ```
+
+## 04-3 데이터 탐색하기
+
+막대그래프
+
+-freq(변수, plot = T, main = '제목')
+
+-barplot(변수, ylim=c(), main='제목', xlab='x축', ylab='y축', name=c(), col=c(),...)
+
+table() : 표로 만들어줌
+
+```{r}
+# 엑셀 파일 가져오기
+library(readxl)
+exdata1 <- read_excel("../data/Sample1.xlsx")
+exdata1
+```
+
+```{r}
+# 막대 그래프 그리기
+library(descr)
+freq(exdata1$SEX, plot = T, main = '성별(barplot')
+```
+
+```{r}
+# 빈도 분포를 구하고 막대 그래프 그리기
+dist_sex <- table(exdata1$SEX)
+dist_sex
+barplot(dist_sex)
+```
+
+```{r}
+# 막대 그래프 축 범위와 제목 지정하기
+barplot(dist_sex, ylim = c(0, 14), main = "BARPLOT", xlab = "SEX",
+        ylab = "FREQUENCY", names = c("Female", "Male"))
+```
+
+```{r}
+# 막대 그래프 색상 변경하기
+barplot(dist_sex, ylim = c(0, 14), main = "BARPLOT", xlab = "SEX",
+        ylab = "FREQUENCY", names = c("Female", "Male"),
+        col = c("green", "black"))
+```
+
+상자 그림: boxplot()
+
+```{r}
+# 상자 그림 그리기
+boxplot(exdata1$Y21_CNT, exdata1$Y20_CNT)
+```
+
+```{r}
+# 상자 그림 축 범위, 제목 지정하기
+boxplot(exdata1$Y21_CNT, exdata1$Y20_CNT, ylim = c(0, 60), main = "boxplot",
+        names = c("21년건수", "20년건수"))
+```
+
+```{r}
+# 상자 그림 색상 변경하기
+boxplot(exdata1$Y21_CNT, exdata1$Y20_CNT, ylim = c(0, 60),
+        main = "boxplot", names = c("21년건수", "20년건수"),
+        col = c("green", "yellow"))
+```
+
+히스토그램: hist()
+
+```{r}
+# 히스토그램 그리기
+hist(exdata1$AGE, xlim = c(0, 60), ylim = c(0, 7), main = "AGE분포")
+```
+
+파이차트: pie()
+
+```{r}
+# 파이차트 그리기
+data(mtcars)
+x <- table(mtcars$gear)
+pie(x)
+```
+
+줄기 잎 그림: stem()
+
+```{r}
+# 줄기 잎 그림 그리기
+x <- c(1, 2, 3, 4, 5, 7, 8, 8, 5, 9, 6, 9)
+stem(x)
+```
+
+```{r}
+# scale 옵션 조정하기
+stem(x, scale = 2)
+stem(x, scale = 0.5)
+```
+
+산점도: plot()
+
+산점도 행렬: pairs(), psych패키지의 pairs.panel()
+
+```{r}
+# 산점도 그리기
+data(iris)
+plot(x = iris$Sepal.Length, y = iris$Sepal.Width)
+```
+
+```{r}
+# 산점도 행렬 그리기
+data(iris)
+pairs(iris)
+```
+
+```{r}
+# psych 패키지로 산점도 행렬 그리기
+library(psych)
+data(iris)
+pairs.panels(iris)
+```
