@@ -1,0 +1,304 @@
+---
+title: "R_study_Ch06"
+format: gfm
+editor: visual
+execute:
+  error: true
+  message: false
+---
+
+# Ch06. 데이터 시각화 : ggplot2 패키지
+
+## 06-1 그래프 그리기
+
+ggplot() : 그래프 기본 틀, +로 그래프 함수 추가
+
+geom_point() : 산점도
+
+geom_line() : 선 그래프
+
+geom_bar() : 막대 그래프
+
+-factor() : 수치형 데이터를 범주화
+
+-aes()로 누적할 열 지정
+
+-coord_polar()를 추가해 선버스트 차트로 변환, theta="y" 옵션은 도넛 모양
+
+geom_boxplot() : 상자 그림
+
+geom_histogram() : 히스토그램
+
+\*코드가 길어질 때 연산자 뒤에서 줄바꿈
+
+```{r}
+# ggplot2 패키지 설치 및 로드하기
+# install.packages("ggplot2")
+library(ggplot2)
+```
+
+```{r}
+# 그래프 기본 틀 생성하기
+str(airquality)
+ggplot(airquality, aes(x = Day, y = Temp))
+```
+
+```{r}
+# 산점도 그리기
+ggplot(airquality, aes(x = Day, y = Temp)) +
+  geom_point()
+```
+
+```{r}
+# 산점도 점 크기와 색상 변경하기
+ggplot(airquality, aes(x = Day, y = Temp)) +
+  geom_point(size = 3, color = 'red')
+```
+
+```{r}
+# 선 그래프 그리기
+ggplot(airquality, aes(x = Day, y = Temp)) +
+  geom_line()
+```
+
+```{r}
+# 막대 그래프 그리기
+ggplot(mtcars, aes(x = cyl)) +
+  geom_bar(width = 0.5)
+```
+
+```{r}
+# 빈 범주를 제외한 막대 그래프 그리기
+ggplot(mtcars, aes(x = factor(cyl))) +
+  geom_bar(width = 0.5)
+```
+
+```{r}
+# 누적 막대 그래프 그리기
+ggplot(mtcars, aes(x = factor(cyl))) +
+  geom_bar(aes(fill = factor(gear)))
+```
+
+```{r}
+# 선버스트 차트 그리기
+ggplot(mtcars, aes(x = factor(cyl))) +
+  geom_bar(aes(fill = factor(gear))) +
+  coord_polar()
+```
+
+```{r}
+# 도넛 모양의 선버스트 차트 그리기
+ggplot(mtcars, aes(x = factor(cyl))) +
+  geom_bar(aes(fill = factor(gear))) +
+  coord_polar(theta = "y")
+```
+
+```{r}
+# 상자 그림 그리기
+ggplot(airquality, aes(x = Day, y = Temp, group = Day)) +
+  geom_boxplot()
+```
+
+```{r}
+# 히스토그램 그리기
+ggplot(airquality, aes(Temp)) +
+  geom_histogram()
+```
+
+```{r}
+# 올바른 줄바꿈
+ggplot(airquality, aes(x = Day, y = Temp)) +
+  geom_point()
+```
+
+```{r}
+# 잘못된 줄바꿈
+ggplot(airquality, aes(x = Day, y = Temp))
++ geom_point()
+```
+
+```{r}
+# 선 그래프와 산점도 함께 그리기
+ggplot(airquality, aes(x = Day, y = Temp)) +
+  geom_line() +
+  geom_point()
+```
+
+```{r}
+# 선 그래프 컬러와 산점도 점 크기 변경하기
+ggplot(airquality, aes(x = Day, y = Temp)) +
+  geom_line(color = "red") +
+  geom_point(size = 3)
+```
+
+## 06-2 그래프에 객체 추가하기
+
+geom_abline() : 사선, 선형회귀선으로 활용
+
+geom_hline() : 평행선, 평균 등 표시에 활용
+
+geom_vline() : 수직선, 특정 위치 나타낼 때 활용
+
+as.Date() : 날짜 형식으로 변환
+
+geom_text() : 레이블 입력
+
+aanotate() : 도형 및 화살표
+
+labs() : 그래프 제목 및 축 제목 추가
+
+theme() : 디자인 테마 적용
+
+```{r}
+# ggplot2 패키지 로드 및 economics 데이터 세트 구조 확인하기
+library(ggplot2)
+str(economics)
+```
+
+```{r}
+# 그래프에 사선 그리기
+ggplot(economics, aes(x = date, y = psavert)) +
+  geom_line() +
+  geom_abline(intercept = 12.18671, slope = -0.0005444)
+```
+
+```{r}
+# 그래프에 평행선 그리기
+ggplot(economics, aes(x = date, y = psavert)) +
+  geom_line() +
+  geom_hline(yintercept = mean(economics$psavert))
+```
+
+```{r}
+# 그래프에 수직선 그리기
+library(dplyr)
+
+x_inter <- filter(economics, psavert == min(economics$psavert))$date
+
+ggplot(economics, aes(x = date, y = psavert)) +
+  geom_line() +
+  geom_vline(xintercept = x_inter)
+```
+
+```{r}
+# 날짜 형식으로 직접 수직선 그리기
+ggplot(economics, aes(x = date, y = psavert)) +
+  geom_line() +
+  geom_vline(xintercept = as.Date("2005-07-01"))
+```
+
+```{r}
+# 그래프에 텍스트 입력하기
+ggplot(airquality, aes(x = Day, y = Temp)) +
+  geom_point() +
+  geom_text(aes(label = Temp, vjust = 0, hjust = 0))
+```
+
+```{r}
+# 그래프에 사각형 그리기
+ggplot(mtcars, aes(x = wt, y = mpg)) +
+  geom_point() +
+  annotate("rect", xmin = 3, xmax = 4, ymin = 12, ymax = 21,
+           alpha = 0.5, fill = "skyblue")
+```
+
+```{r}
+# 그래프에 화살표 그리기
+ggplot(mtcars, aes(x = wt, y = mpg)) +
+  geom_point() +
+  annotate("rect", xmin = 3, xmax = 4, ymin = 12, ymax = 21,
+           alpha = 0.5, fill = "skyblue") +
+  annotate("segment", x = 2.5, xend = 3.7, y = 10, yend = 17,
+           color = "red", arrow = arrow())
+```
+
+```{r}
+# 그래프와 축 젬고 추가하기
+ggplot(mtcars, aes(x = gear)) +
+  geom_bar() +
+  labs(x = "기어 수", y = "자동차 수", title = "변속기 기어별 자동차 수")
+```
+
+```{r}
+# 디자인 테마 적용하기
+ggplot(mtcars, aes(x = gear)) + geom_bar() + theme_gray()
+ggplot(mtcars, aes(x = gear)) + geom_bar() + theme_bw()
+ggplot(mtcars, aes(x = gear)) + geom_bar() + theme_linedraw()
+ggplot(mtcars, aes(x = gear)) + geom_bar() + theme_light()
+ggplot(mtcars, aes(x = gear)) + geom_bar() + theme_dark()
+ggplot(mtcars, aes(x = gear)) + geom_bar() + theme_minimal()
+ggplot(mtcars, aes(x = gear)) + geom_bar() + theme_classic()
+ggplot(mtcars, aes(x = gear)) + geom_bar() + theme_void()
+```
+
+cor.test() : 상관분석
+
+lm() : 회귀분석
+
+```{r}
+# 엑셀 파일 가져오기
+library(readxl)
+exdata1 <- read_excel("../data/Sample1.xlsx")
+exdata1
+```
+
+```{r}
+# 상관분석하여 두 변수 간의 상관관계 확인하기
+cor.test(exdata1$Y20_CNT, exdata1$Y21_CNT)
+```
+
+```{r}
+# 회귀분석하여 절편과 기울기 구하기
+reg_result <- lm(Y21_CNT ~ Y20_CNT, data = exdata1)
+reg_result
+```
+
+## 06-3 지도 시각화 : ggmap 패키지
+
+register_google(key = "API 키")로 구글맵 API 키 등록
+
+get_googlemap(center, maptype = "지도 유형") : 설정한 위치를 지도로 가져옴
+
+-center: 위도, 경도 값이나 위치를 포함하는 문자열 입력
+
+-지도유형: terrain(기본), satellite(인공위성), roadmap(로드맵), hybrid(인공위성+로드맵)
+
+ggmap() : 위치 데이터를 지도로 시각화
+
+geocode() : 위치를 포함하는 문자열을 위도와 경도 값으로 반환
+
+```{r}
+# ggmap 패키지 설치 및 로드하기
+# install.packages("ggmap")
+library(ggmap)
+```
+
+```{r}
+# 구글 지도에서 서울시 지도 가져오기기
+my_key <- Sys.getenv("GOOGLE_MAPS_KEY")
+register_google(key = my_key)
+
+gg_seoul <- get_googlemap("seoul", maptype = "roadmap")
+ggmap(gg_seoul)
+```
+
+```{r}
+# 지도에 대전역 좌표를 점으로 표시하기
+library(dplyr)
+library(ggplot2)
+
+geo_code <- enc2utf8("대전역") %>% geocode()
+geo_data <- as.numeric(geo_code)
+
+get_googlemap(center = geo_data, maptype = "roadmap", zoom = 13) %>%  ggmap() +
+  geom_point(data = geo_code, aes(x = lon, y = lat))
+```
+
+```{r}
+# 줌 옵션 조절하기
+get_googlemap(center = geo_data, maptype = "roadmap", zoom = 9) %>% ggmap() +
+  geom_point(data = geo_code, aes(x = lon, y = lat))
+
+get_googlemap(center = geo_data, maptype = "roadmap", zoom = 17) %>% ggmap() +
+  geom_point(data = geo_code, aes(x = lon, y = lat))
+```
