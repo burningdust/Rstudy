@@ -1,0 +1,410 @@
+---
+title: "R_study_Ch05"
+format: gfm
+editor: visual
+execute:
+  error: true
+  message: false
+---
+
+# Ch05. 데이터 가공하기
+
+## 05-1 dplyr 패키지
+
+```{r}
+# dplyr 패키지 설치 및 로드하기
+# install.packages("dplyr")
+library(dplyr)
+```
+
+\*다른 패키지에 동일한 함수가 있을 경우 ::를 사용해 구분 (dplyr::filter)
+
+행 추출: filter()
+
+열 추출: select()
+
+정렬: arrange(), 내림차순은 desc() 추가
+
+```{r}
+# 조건에 맞는 데이터 추출하기
+filter(mtcars, cyl == 4)
+```
+
+```{r}
+# 두 가지 조건에 맞는 데이터를 필터링 하기
+filter(mtcars, cyl >= 6 & mpg > 20)
+```
+
+```{r}
+# 지정한 변수만 추출하기
+head(select(mtcars, am, gear))
+```
+
+```{r}
+# 오름차순 정렬하기
+head(arrange(mtcars, wt))
+```
+
+```{r}
+# 오름차순 정렬한 후 내림차순 정렬하기
+head(arrange(mtcars, mpg, desc(wt)))
+```
+
+열 추가: mutate()
+
+중복 값 제거: distinct(), 여러 컬럼 지정 시 모든 열의 값이 동일할 때만 제거
+
+데이터 순위 확인: rank()
+
+```{r}
+# 새로운 열 추가하기
+head(mutate(mtcars, years = "1974"))
+head(mutate(mtcars, mpg_rank = rank(mpg)))
+```
+
+```{r}
+# 중복 값 제거하기
+distinct(mtcars, cyl)
+distinct(mtcars, gear)
+```
+
+```{r}
+# 여러 개 열에서 중복 값 제거하기
+distinct(mtcars, cyl, gear)
+```
+
+데이터 요약: summarise(), summarize()
+
+그룹화: group_by()
+
+n() : 데이터 개수
+
+n_distinct() : 중복 값 제외 개수
+
+n()과 n_distinct()는 단독 사용 불가하며 summarise(), mutate(), filter() 함수에서만 사용 가능
+
+```{r}
+# 데이터 요약하기
+summarise(mtcars, cyl_mean = mean(cyl), cyl_min = min(cyl), cyl_max = max(cyl))
+summarise(mtcars, mean(cyl), min(cyl), max(cyl))
+```
+
+```{r}
+# 그룹별로 요약하기
+gr_cyl <- group_by(mtcars, cyl)
+summarise(gr_cyl, n())
+```
+
+```{r}
+gr_cyl <- group_by(mtcars, cyl)
+summarise(gr_cyl, n_distinct(gear))
+```
+
+샘플 추출
+
+-sample_n() : 개수 기준 추출
+
+-sample_frac() : 비율 기준 추출
+
+```{r}
+# 샘플 데이터 10개 추출하기
+sample_n(mtcars, 10)
+```
+
+```{r}
+# 전체 데이터의 20%를 샘플로 추출하기
+sample_frac(mtcars, 0.2)
+```
+
+파이프 연산자 %\>% : 함수 연달아 사용 가능
+
+```{r}
+# 파이프 연산자로 그룹별 요약하기
+group_by(mtcars, cyl) %>% summarise(n())
+```
+
+```{r}
+# 파이프 연산자 없이 순위 기준으로 정렬하기
+mp_rank <- mutate(mtcars, mpg_rank = rank(mpg))
+arrange(mp_rank, mpg_rank)
+```
+
+```{r}
+# 파이프 연산자를 사용하여 순위 기준으로 정렬하기
+mutate(mtcars, mpg_rank = rank(mpg)) %>% arrange(mpg_rank)
+```
+
+## 05-2 데이터 가공하기
+
+```{r}
+# 패키지 로드 및 데이터 불러오기
+library(dplyr)
+library(readxl)
+exdata1 <- read_excel("../data/Sample1.xlsx")
+exdata1
+```
+
+```{r}
+# 선택한 변수 추출하기
+exdata1 %>% select(ID)
+```
+
+```{r}
+# 선택한 변수 여러 개 추출하기
+exdata1 %>% select(ID, AREA, Y21_CNT)
+```
+
+```{r}
+# 선택한 변수 제외하고 추출하기
+exdata1 %>% select(-AREA)
+exdata1 %>% select(-AREA, -Y21_CNT)
+```
+
+```{r}
+# 조건에 만족하는 데이터만 추출하기
+exdata1 %>%  filter(AREA == '서울')
+exdata1 %>% filter(AREA == '서울' & Y21_CNT >= 10)
+```
+
+```{r}
+# 오름차순 정렬하기
+exdata1 %>% arrange(AGE)
+```
+
+```{r}
+# 내림차순 정렬하기
+exdata1 %>% arrange(desc(Y21_AMT))
+```
+
+```{r}
+# 중첩 정렬하기
+exdata1 %>% arrange(AGE, desc(Y21_AMT))
+```
+
+```{r}
+# 변수 값 합산하기
+exdata1 %>% summarise(TOT_Y21_AMT = sum(Y21_AMT))
+```
+
+```{r}
+# 변수 값을 그룹별로 합산하기
+exdata1 %>% group_by(AREA) %>% summarise(SUM_Y21_AMT = sum(Y21_AMT))
+```
+
+세로 결합: bind_rows()
+
+가로 결합: by=key변수 설정 필요
+
+-left_join() : 테이블1 기준
+
+-inner_join() : 기준 변수 값이 동일할 때만 결합
+
+-full_join() : 전체 결합
+
+```{r}
+# 엑셀 파일 불러오기
+library(readxl)
+m_history <- read_excel("../data/Sample2_m_history.xlsx")
+f_history <- read_excel("../data/Sample3_f_history.xlsx")
+View(m_history)
+View(f_history)
+```
+
+```{r}
+# 테이블을 세로로 결합하기
+exdata_bindjoin <- bind_rows(m_history, f_history)
+View(exdata_bindjoin)
+```
+
+```{r}
+# 엑셀 파일 불러오기
+library(readxl)
+jeju_y21_history <- read_excel("../data/Sample4_y21_history.xlsx")
+jeju_y20_history <- read_excel("../data/Sample5_y20_history.xlsx")
+View(jeju_y21_history)
+View(jeju_y20_history)
+```
+
+```{r}
+# 첫 번째 테이블 기준으로 가로 결합하기
+bind_col <- left_join(jeju_y21_history, jeju_y20_history, by = "ID")
+View(bind_col)
+```
+
+```{r}
+# 키 변수를 기준으로 일치하는 데이터만 결합
+bind_col_inner <- inner_join(jeju_y21_history, jeju_y20_history, by = "ID")
+View(bind_col_inner)
+```
+
+```{r}
+# 키 변수를 기준으로 모두 가로 결합하기
+bind_col_full <- full_join(jeju_y21_history, jeju_y20_history, by = "ID")
+View(bind_col_full)
+```
+
+## 05-3 데이터 구조 변형하기
+
+reshape2 패키지
+
+-melt() : 행렬의 열을 행으로 바꿈
+
+-dcast() : 행렬의 행을 열로 바꾸어 데이터 프레임 형태로 반환
+
+-acast() : 행렬의 행을 열로 바꾸어 벡터, 행렬, 배열 형태로 반환
+
+names() : 변수명 반환
+
+tolower() : 소문자로 치환
+
+```{r}
+# reshape2 패키지 설치하기
+# install.packages("reshape2")
+```
+
+```{r}
+# airquality 데이터 세트 확인하기
+head(airquality)
+```
+
+```{r}
+# 변수명 소문자로 통일하기
+names(airquality) <- tolower(names(airquality))
+head(airquality)
+```
+
+```{r}
+# 열을 행으로 바꾸기
+library(reshape2)
+melt_test <- melt(airquality)
+head(melt_test)
+tail(melt_test)
+```
+
+```{r}
+# 기준을 정해 열을 행으로 바꾸기
+melt_test2 <- melt(airquality, id.vars = c("month", "wind"),
+                   measure.vars = "ozone")
+head(melt_test2)
+```
+
+```{r}
+# 열을 행으로 바꾸기
+library(reshape2)
+aq_melt <- melt(airquality, id.vars = c("month", "day"), na.rm = FALSE)
+head(aq_melt)
+```
+
+```{r}
+# 행을 열로 바꾸기
+aq_dcast <- dcast(aq_melt, month+day ~ variable)
+head(aq_dcast)
+```
+
+```{r}
+# 행을 열로 바꾸기
+aq_dcast <- dcast(aq_melt, month+day ~ variable)
+head(aq_dcast)
+```
+
+```{r}
+# cast() 함수로 평균 요약 확인하기
+aq_melt <- melt(airquality, id.vars = c("month", "day"), na.rm = TRUE)
+acast(aq_melt, month ~ variable, mean)
+```
+
+```{r}
+# cast() 함수로 합계 요약 확인하기
+dcast(aq_melt, month ~ variable, sum)
+```
+
+## 05-4 데이터 정제하기
+
+결측치 : NA(Not Available)로 표현
+
+is.na()로 결측치 확인
+
+-table(is.na())로 빈도 확인
+
+-sum(is.na())로 개수 확인
+
+-colSums(is.na())로 각 컬럼의 결측치 개수 확인
+
+함수에서 결측치 제외할 때는 na.rm = T 옵션 사용
+
+```{r}
+# 결측치 확인하기
+x <- c(1, 2, NA, 4, 5)
+x
+sum(x)
+is.na(x)
+table(is.na(x))
+```
+
+```{r}
+# 결측치 제외하고 연산하기
+x <- c(1, 2, NA, 4, 5)
+x
+sum(x)
+is.na(x)
+sum(x, na.rm = T)
+```
+
+```{r}
+# airquality 데이터 세트 결측치 확인하기
+data(airquality)
+is.na(airquality)
+```
+
+```{r}
+# 데이터 세트에 있는 결측치 전체 개수 확인하기
+sum(is.na(airquality))
+```
+
+```{r}
+# 컬럼별 결측치 개수 확인하기
+colSums(is.na(airquality))
+```
+
+결측치 제거: na.omit(), 결측치가 있는 행 전체를 데이터 세트에서 제거
+
+변수\[is.na(변수)\] \<- 대체값 으로 결측치 대체
+
+```{r}
+# 결측치가 있는 행 제거하기
+data(airquality)
+na.omit(airquality)
+```
+
+```{r}
+# 결측치 0으로 대체하기
+data(airquality)
+airquality[is.na(airquality)] <- 0
+colSums(is.na(airquality))
+```
+
+```{r}
+# 이상치 확인하기
+data(mtcars)
+boxplot(mtcars$wt)
+```
+
+boxplot()\$stats로 상자 그림의 기술통계량 확인
+
+```{r}
+# 상자 그림의 기술통계량 확인하기
+boxplot(mtcars$wt)$stats
+```
+
+ifelse(조건문, 참일때 실행, 거짓일때 실행) 으로 이상치 처리
+
+```{r}
+# 이상치 확인하기
+mtcars$wt > 5.25
+```
+
+```{r}
+# 이상치 처리하기
+mtcars$wt <- ifelse(mtcars$wt > 5.25, NA, mtcars$wt)
+mtcars$wt
+```
