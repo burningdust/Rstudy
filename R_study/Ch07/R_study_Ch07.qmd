@@ -170,3 +170,100 @@ head(daejeon_data$lon)
 ```
 
 mutate_geocode() : 데이터 프레임의 컬럼명으로 주소가 있는 열을 기준으로 여러 주소의 경도와 위도 데이터를 한 번에 가져옴
+
+```{r}
+# 대전시 지도 시각화하기
+daejeon_map <- get_googlemap('대전', maptype = 'roadmap', zoom = 11)
+ggmap(daejeon_map) +
+  geom_point(data = daejeon_data,
+             aes(x = lon, y = lat, color = factor(name)), size = 3)
+```
+
+```{r}
+# 마커로 위치 표시하고 위치 이름 넣기
+daejeon_data_marker <- data.frame(daejeon_data$lon, daejeon_data$lat)
+daejeon_map <- get_googlemap('대전', maptype = 'roadmap', zoom = 11,
+                             markers = daejeon_data_marker)
+ggmap(daejeon_map) +
+  geom_text(data = daejeon_data, aes(x = lon, y = lat), size = 3,
+            label = daejeon_data$name)
+```
+
+## 07-4 서울시 지역별 미세먼지 농도 차이 비교하기
+
+```{r}
+# 엑셀 파일 가져오기
+library(readxl)
+dustdata <- read_excel("../data/dustdata.xlsx")
+
+View(dustdata)
+str(dustdata)
+```
+
+```{r}
+# 성북구와 중구 데이터만 추출하기
+library(dplyr)
+dustdata_anal <- dustdata[, c("날짜", "성북구", "중구")]
+View(dustdata_anal)
+```
+
+```{r}
+# 결측치 확인하기
+is.na(dustdata_anal)
+sum(is.na(dustdata_anal))
+```
+
+```{r}
+# 지역별 미세먼지 농도의 기술통계량 구하기
+library(psych)
+
+describe(dustdata_anal$성북구)
+describe(dustdata_anal$중구)
+```
+
+```{r}
+# 성북구와 중구 미세먼지 농도 상자 그림 그리기
+boxplot(dustdata_anal$성북구, dustdata_anal$중구,
+        main = "finedust_compare", xlab = "AREA", names = c("성북구", "중구"),
+        ylab = "FINEDUST_PM", col = c("blue", "green"))
+```
+
+f검정 var.test()
+
+```{r}
+# f검정으로 지역별 미세먼지 농도의 분산 차이를 검정하기
+var.test(dustdata_anal$중구, dustdata_anal$성북구)
+```
+
+t검정 t.test()
+
+```{r}
+# t검정으로 지역별 미세먼지 농도의 평균 차이를 검정하기
+t.test(dustdata_anal$중구, dustdata_anal$성북구, var.equal = T)
+```
+
+분산분석: anova(lm())
+
+```{r}
+#엑셀 파일 가져오기 
+library(readxl)
+exdata1 <- read_excel("../data/Sample1.xlsx")
+exdata1
+```
+
+```{r}
+# 경기, 서울, 제주 지역 Y20_CNT를 상자 그림으로 그리기
+boxplot(formula = Y20_CNT ~ AREA, data = exdata1)
+```
+
+```{r}
+# 분산분석으로 세 집단 간 평균 차이 검정하기
+anova(lm(Y20_CNT ~ AREA, data = exdata1))
+```
+
+일원분산분석: oneway.test()
+
+```{r}
+# 분산분석으로 세 집단 간 평균 차이 검정하기
+oneway.test(data = exdata1, Y20_CNT ~ AREA, var.equal = T)
+```
